@@ -8,14 +8,14 @@ class Cube:
     """
 
     UP = 0
-    DOWN = 1
-    LEFT = 2
-    RIGHT = 3
-    FRONT = 4
-    BACK = 5
+    FRONT = 1
+    RIGHT = 2
+    LEFT = 3
+    BACK = 4
+    DOWN = 5
 
-    CLOCKWISE = 0
-    COUNTER_CLOCKWISE = 1
+    CLOCKWISE = 1
+    COUNTER_CLOCKWISE = 0
 
     def __init__(self, size=3):
         self.size = size
@@ -31,63 +31,70 @@ class Cube:
     def rotate(self, face, direction=CLOCKWISE, index=0):
         if index == 0:
             self.faces[face].rotate(direction)
-        self._rotate_strip(face, direction, index)
 
-    def _rotate_strip(self, face, direction, index):
+        if direction == self.CLOCKWISE:
+            self._rotate_strip(face, index)
+        else:
+            self._rotate_strip(5-face, self.size-1-index)
+
+    def _rotate_strip(self, face, index):
         match face:
             case self.UP:
                 self._swap_lines(
-                    self.faces[self.FRONT].tiles[index], 
-                    self.faces[self.RIGHT].tiles[index], 
-                    self.faces[self.BACK].tiles[index], 
-                    self.faces[self.LEFT].tiles[index], 
-                    direction)
+                    self.faces[self.FRONT], [[index, i] for i in range(self.size)], 
+                    self.faces[self.RIGHT], [[index, i] for i in range(self.size)], 
+                    self.faces[self.BACK], [[index, i] for i in range(self.size)], 
+                    self.faces[self.LEFT], [[index, i] for i in range(self.size)], 
+                    )
 
             case self.DOWN:
                 self._swap_lines(
-                    self.faces[self.FRONT].tiles[self.size-1-index], 
-                    self.faces[self.RIGHT].tiles[self.size-1-index], 
-                    self.faces[self.BACK].tiles[self.size-1-index], 
-                    self.faces[self.LEFT].tiles[self.size-1-index], 
-                    1-direction)#swap d
+                    self.faces[self.LEFT], [[self.size-1-index, i] for i in range(self.size)], 
+                    self.faces[self.BACK], [[self.size-1-index, i] for i in range(self.size)], 
+                    self.faces[self.RIGHT], [[self.size-1-index, i] for i in range(self.size)], 
+                    self.faces[self.FRONT], [[self.size-1-index, i] for i in range(self.size)], 
+                    )
                     
             case self.LEFT:
-                pass
+                self._swap_lines(
+                    self.faces[self.UP], [[self.size-1-i, index] for i in range(self.size)], 
+                    self.faces[self.BACK], [[self.size-1-i, self.size-1-index] for i in range(self.size)], 
+                    self.faces[self.DOWN], [[i, index] for i in range(self.size)], 
+                    self.faces[self.FRONT], [[self.size-1-i, index] for i in range(self.size)],
+                    )
 
             case self.RIGHT:
-                pass
+                self._swap_lines(
+                    self.faces[self.FRONT], [[i, self.size-1-index] for i in range(self.size)],
+                    self.faces[self.DOWN], [[self.size-1-i, self.size-1-index] for i in range(self.size)],
+                    self.faces[self.BACK], [[self.size-1-i, index] for i in range(self.size)],
+                    self.faces[self.UP], [[self.size-1-i, self.size-1-index] for i in range(self.size)],
+                    )
+                
             case self.FRONT:
-                pass
+                self._swap_lines(
+                    self.faces[self.UP], [[self.size-1-index, self.size-1-i] for i in range(self.size)],
+                    self.faces[self.LEFT], [[i, self.size-1-index] for i in range(self.size)],
+                    self.faces[self.DOWN], [[index, i] for i in range(self.size)],      
+                    self.faces[self.RIGHT], [[self.size-1-i, index] for i in range(self.size)],
+                    )
+                
             case self.BACK:
-                pass
+                self._swap_lines(
+                    self.faces[self.RIGHT], [[self.size-1-i, self.size-1-index] for i in range(self.size)],
+                    self.faces[self.DOWN], [[self.size-1-index, i] for i in range(self.size)],
+                    self.faces[self.LEFT], [[i, index] for i in range(self.size)],
+                    self.faces[self.UP], [[index, self.size-1-i] for i in range(self.size)],
+                    )
     
-    """
-    Clockwise is a rotate left style operation
-    """
-    def _swap_lines(self, line1, line2, line3, line4, direction):
-        if direction == 0:   
-            self._swap_lines_clockwise(line1, line2, line3, line4)
-        else:
-            self._swap_lines_counter_clockwise(line1, line2, line3, line4)
-
-    def _swap_lines_clockwise(self, line1, line2, line3, line4):
+ 
+    def _swap_lines(self, face1:Face, cordinates1, face2:Face, cordinates2, face3:Face, cordinates3, face4:Face, cordinates4):
         for i in range(self.size):
-            temp = line1[i]
-            line1[i] = line2[i]
-            line2[i] = line3[i]
-            line3[i] = line4[i]
-            line4[i] = temp
-
-    def _swap_lines_counter_clockwise(self, line1, line2, line3, line4):
-        for i in range(self.size):
-            temp = line1[i]
-            line1[i] = line4[i]
-            line4[i] = line3[i]
-            line3[i] = line2[i]
-            line2[i] = temp
-            
-            
-            
+            temp = face1.tiles[cordinates1[i][0]][cordinates1[i][1]]
+            face1.tiles[cordinates1[i][0]][cordinates1[i][1]] = face2.tiles[cordinates2[i][0]][cordinates2[i][1]]
+            face2.tiles[cordinates2[i][0]][cordinates2[i][1]] = face3.tiles[cordinates3[i][0]][cordinates3[i][1]]
+            face3.tiles[cordinates3[i][0]][cordinates3[i][1]] = face4.tiles[cordinates4[i][0]][cordinates4[i][1]]
+            face4.tiles[cordinates4[i][0]][cordinates4[i][1]] = temp
 
 
 class Color:
@@ -132,8 +139,8 @@ class Face:
                 self._rotate_counter_clockwise()
 
     def _rotate_clockwise(self):
-        for x in range((self.size+1)/2):
-            for y in range((self.size)/2):
+        for x in range((self.size+1)//2):
+            for y in range((self.size)//2):
                 temp = self.tiles[x][y]
                 self.tiles[x][y] = self.tiles[self.size-1-y][x]
                 self.tiles[self.size-1-y][x] = self.tiles[self.size-1-x][self.size-1-y]
@@ -141,13 +148,10 @@ class Face:
                 self.tiles[y][self.size-1-x] = temp
 
     def _rotate_counter_clockwise(self):
-        for x in range((self.size+1)/2):
-            for y in range((self.size)/2):
+        for x in range((self.size+1)//2):
+            for y in range((self.size)//2):
                 temp = self.tiles[x][y]
                 self.tiles[x][y] = self.tiles[y][self.size-1-x]
                 self.tiles[y][self.size-1-x] = self.tiles[self.size-1-x][self.size-1-y]
                 self.tiles[self.size-1-x][self.size-1-y] = self.tiles[self.size-1-y][x]
                 self.tiles[self.size-1-y][x] = temp
-
-if __name__ == "__main__":
-    print((Color(100, 100, 100)*2).color)
