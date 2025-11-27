@@ -57,17 +57,17 @@ class Cube:
                     
             case self.LEFT:
                 self._swap_lines(
-                    self.faces[self.UP], [[self.size-1-i, index] for i in range(self.size)], 
+                    self.faces[self.UP], [[i, index] for i in range(self.size)], 
                     self.faces[self.BACK], [[self.size-1-i, self.size-1-index] for i in range(self.size)], 
                     self.faces[self.DOWN], [[i, index] for i in range(self.size)], 
-                    self.faces[self.FRONT], [[self.size-1-i, index] for i in range(self.size)],
+                    self.faces[self.FRONT], [[i, index] for i in range(self.size)],
                     )
 
             case self.RIGHT:
                 self._swap_lines(
-                    self.faces[self.FRONT], [[i, self.size-1-index] for i in range(self.size)],
+                    self.faces[self.FRONT], [[self.size-1-i, self.size-1-index] for i in range(self.size)],
                     self.faces[self.DOWN], [[self.size-1-i, self.size-1-index] for i in range(self.size)],
-                    self.faces[self.BACK], [[self.size-1-i, index] for i in range(self.size)],
+                    self.faces[self.BACK], [[i, index] for i in range(self.size)],
                     self.faces[self.UP], [[self.size-1-i, self.size-1-index] for i in range(self.size)],
                     )
                 
