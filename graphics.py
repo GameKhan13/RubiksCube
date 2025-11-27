@@ -3,13 +3,12 @@ from cube import Cube, Face
 
 CUBE_SURFACE: Surface = None
 WIDTH, HEIGHT = None, None
-SQUARE_ROOT = (4.5 ** 0.5)
 DIRECTION_DICT = {
-    Cube.UP : Vector3(90, 0, 0),
-    Cube.DOWN : Vector3(-90, 0, 0),
-    Cube.LEFT : Vector3(0, 270, 0),
-    Cube.RIGHT : Vector3(0, 90, 0),
-    Cube.BACK : Vector3(0, 180, 0),
+    Cube.UP : Vector3(-90, 0, 0),
+    Cube.DOWN : Vector3(90, 0, 0),
+    Cube.LEFT : Vector3(0, -270, 0),
+    Cube.RIGHT : Vector3(0, -90, 0),
+    Cube.BACK : Vector3(0, -180, 0),
     Cube.FRONT : Vector3(0, 0, 0),
 }
 OFFSETS = [Vector3(-0.5, 0.5, -0.5), Vector3(0.5, 0.5, -0.5), Vector3(0.5, -0.5, -0.5), Vector3(-0.5, -0.5, -0.5)]
@@ -63,19 +62,41 @@ def clear() -> None:
 
 @checkSurface
 def drawFace(face: Face, rotation: Vector3) -> None:
-    SQUARE_ROOT = (3 * (face.size / 2) ** 2) ** 0.5
+
+    normal = Vector3(0, 0, 1)
+    normal = rotate(normal, *DIRECTION_DICT[face.direction]).normalize()
+    normal = rotate(normal, *rotation).normalize()
+    brightness = normal.dot(Vector3(0, 0, 1))
+    sqrt = (3 * (face.size / 2) ** 2) ** 0.5
+
+
+    if brightness <= 0.01:
+        return
+
     for y in range(face.size):
         for x in range(face.size):
-            vertices = []
-            for offset in OFFSETS:
-                position = (Vector3(x - face.size / 2 + 0.5, y - face.size / 2 + 0.5, -1) + offset) / SQUARE_ROOT
-                position = rotate(position, *DIRECTION_DICT[face.direction])
-                position = rotate(position, *rotation)
-                position = project(position)
-                position = position + Vector2(WIDTH, HEIGHT) / 2
-                vertices.append(position)
-            draw.polygon(CUBE_SURFACE, face.faces[y][x].color, vertices)
-            draw.polygon(CUBE_SURFACE, [100]*3, vertices, width=5)
+            drawTile(face, x, y, brightness, rotation, sqrt)
+
+@checkSurface
+def drawTile(face, x, y, brightness, rotation, sqrt):
+    vertices = []
+
+    for offset in OFFSETS:
+        position = (Vector3(x - face.size / 2 + 0.5, y - face.size / 2 + 0.5, -face.size / 2 + 0.5) + offset) / sqrt
+        position = rotate(position, *DIRECTION_DICT[face.direction])
+        position = rotate(position, *rotation)
+        position = project(position)
+        position = position + Vector2(WIDTH, HEIGHT) / 2
+        vertices.append(position)
+
+    draw.polygon(CUBE_SURFACE, (face.tiles[y][x] * brightness).color, vertices)
+    draw.polygon(CUBE_SURFACE, [60]*3, vertices, width=2)
+
+@checkSurface
+def drawCube(cube: Cube, rotation: Vector3):
+    for face in cube.faces.values():
+        drawFace(face, rotation)
+        
 
             
         
