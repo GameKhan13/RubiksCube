@@ -2,7 +2,7 @@ import pygame
 import graphics as g
 import cube
 
-screen = pygame.display.set_mode((800, 600))
+screen = pygame.display.set_mode((800, 600), pygame.SCALED)
 
 
 clock = pygame.time.Clock()
@@ -13,6 +13,14 @@ a = 0
 b = 22.5
 while True:
     for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.display.toggle_fullscreen()
+            screen.fill([255]*3)
+            pygame.display.flip()
+            for i in range(60 * 3):
+                clock.tick(60)
+            pygame.quit()
+            quit()
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button in [1, 3]:
                 if button == -1:
