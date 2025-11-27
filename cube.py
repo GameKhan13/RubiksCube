@@ -37,22 +37,23 @@ class Cube:
         match face:
             case self.UP:
                 self._swap_lines(
-                    self.faces[self.FRONT][index], 
-                    self.faces[self.RIGHT][index], 
-                    self.faces[self.BACK][index], 
-                    self.faces[self.LEFT][index], 
+                    self.faces[self.FRONT].tiles([index]), 
+                    self.faces[self.RIGHT].tiles([index]), 
+                    self.faces[self.BACK].tiles([index]), 
+                    self.faces[self.LEFT].tiles([index]), 
                     direction)
 
             case self.DOWN:
                 self._swap_lines(
-                    self.faces[self.FRONT][self.size-1-index], 
-                    self.faces[self.RIGHT][self.size-1-index], 
-                    self.faces[self.BACK][self.size-1-index], 
-                    self.faces[self.LEFT][self.size-1-index], 
+                    self.faces[self.FRONT].tiles([self.size-1-index]), 
+                    self.faces[self.RIGHT].tiles([self.size-1-index]), 
+                    self.faces[self.BACK].tiles([self.size-1-index]), 
+                    self.faces[self.LEFT].tiles([self.size-1-index]), 
                     1-direction)#swap d
                 
             case self.LEFT:
                 pass
+
             case self.RIGHT:
                 pass
             case self.FRONT:
@@ -121,7 +122,7 @@ class Face:
     def __init__(self, direction, size=3):
         self.direction = direction
         self.size = size
-        self.tiles = [[Color(self.face_colors[direction]) for x in range(size)] for y in range(size)] #[y][x]
+        self.tiles = [[Color(*self.face_colors[direction]) for x in range(size)] for y in range(size)] #[y][x]
 
     def rotate(self, direction):
         match direction:
