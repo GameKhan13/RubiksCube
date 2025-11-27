@@ -1,39 +1,19 @@
 from pygame import Surface, Vector3, Vector2, draw
 from cube import Cube, Face
-
-CUBE_SURFACE: Surface = None
-WIDTH, HEIGHT = None, None
+from math import inf
 DIRECTION_DICT = {
-    Cube.UP : Vector3(-90, 0, 0),
-    Cube.DOWN : Vector3(90, 0, 0),
-    Cube.LEFT : Vector3(0, -270, 0),
-    Cube.RIGHT : Vector3(0, -90, 0),
-    Cube.BACK : Vector3(0, -180, 0),
-    Cube.FRONT : Vector3(0, 0, 0),
+   Cube.UP : Vector3(-90, 0, 0),
+   Cube.DOWN : Vector3(90, 0, 0),
+   Cube.LEFT : Vector3(0, -270, 0),
+   Cube.RIGHT : Vector3(0, -90, 0),
+   Cube.BACK : Vector3(0, -180, 0),
+   Cube.FRONT : Vector3(0, 0, 0),
 }
-OFFSETS = [Vector3(-0.5, 0.5, -0.5), Vector3(0.5, 0.5, -0.5), Vector3(0.5, -0.5, -0.5), Vector3(-0.5, -0.5, -0.5)]
+SQUARE_OFFSETS = [Vector3(-0.5, 0.5, -0.5), Vector3(0.5, 0.5, -0.5), Vector3(0.5, -0.5, -0.5), Vector3(-0.5, -0.5, -0.5)]
+TRIANGLE_OFFSETS = [Vector3(-0.3, 0.7, -0.5), Vector3(0.3, 0.7, -0.5), Vector3(0.0, 1.0, -0.5)]
 
-
-# Create Surface For Cube
-def createSurface(w, h) -> None:
-    global CUBE_SURFACE, WIDTH, HEIGHT
-    CUBE_SURFACE = Surface((w, h))
-    WIDTH, HEIGHT = w, h
-
-def checkSurface(func):
-    def wrapper(*args, **kwargs):
-        # Check if Surface Initialized
-        if CUBE_SURFACE is None:
-            raise Exception("Surface not initialized. Call <createSurface> first!")
-        
-        result = func(*args, **kwargs)
-
-        return result
-    return wrapper
-        
-
-# 3D Rotation Around Origin
-def rotate(v: Vector3, pitch=0, yaw=0, roll=0, direction_order="ypr") -> Vector3:
+# 3D Rotation of vectors around origin
+def _rotate(v: Vector3, pitch=0, yaw=0, roll=0, direction_order="ypr") -> Vector3:
     for d in direction_order:
         if d == "y":
             # Yaw rotation around Y-axis
@@ -50,62 +30,124 @@ def rotate(v: Vector3, pitch=0, yaw=0, roll=0, direction_order="ypr") -> Vector3
 
     return v
 
-# Orthographic Projection
-@checkSurface
-def project(v: Vector3) -> Vector2:
-    return Vector2(v.x * WIDTH / 2, v.y * HEIGHT / 2)
+class CubeRenderer:
+    def __init__(self, cube: Cube, width, height):
+        self._cube: Cube = cube
+        self.rotation = Vector3(0, 0, 0)
+        self._surface: Surface = Surface((width, height))
+        self.width, self.height = width, height
+        self._sqrt = (3 * (cube.size / 2) ** 2) ** 0.5
+        self._half_width = -cube.size / 2 + 0.5
 
-@checkSurface
-def clear() -> None:
-    CUBE_SURFACE.fill((0, 0, 0))
+    def clear(self) -> None:
+        self._surface.fill((0, 0, 0))
 
+    # Orthographic Projection
+    def project(self, v: Vector3) -> Vector2:
+        return Vector2(v.x * self.width / 2 * 0.95, v.y * self.height / 2 * 0.95)
 
-@checkSurface
-def drawFace(face: Face, rotation: Vector3) -> None:
+    # Draws a single face from aself._cube
+    def _drawFace(self, face: Face) -> None:
+        normal = Vector3(0, 0, 1)
+        normal = _rotate(normal, *DIRECTION_DICT[face.direction]).normalize()
+        normal = _rotate(normal, *self.rotation).normalize()
+        brightness = normal.dot(Vector3(0, 0, 1))
 
-    normal = Vector3(0, 0, 1)
-    normal = rotate(normal, *DIRECTION_DICT[face.direction]).normalize()
-    normal = rotate(normal, *rotation).normalize()
-    brightness = normal.dot(Vector3(0, 0, 1))
-    sqrt = (3 * (face.size / 2) ** 2) ** 0.5
+        if brightness <= 0.01:
+            return
 
+        for y in range(face.size):
+            for x in range(face.size):
+                self._drawTile(face, x, y, brightness)
 
-    if brightness <= 0.01:
-        return
+    # Draws a single tile from a face
+    def _drawTile(self, face, x, y, brightness):
+        vertices = []
 
-    for y in range(face.size):
-        for x in range(face.size):
-            drawTile(face, x, y, brightness, rotation, sqrt)
+        for offset in SQUARE_OFFSETS:
+            position = (Vector3(x + self._half_width, y + self._half_width, self._half_width) + offset) / self._sqrt
+            position = _rotate(position, *DIRECTION_DICT[face.direction])
+            position = _rotate(position, *self.rotation)
+            position = self.project(position)
+            position = position + Vector2(self.width, self.height) / 2
+            vertices.append(position)
 
-@checkSurface
-def drawTile(face, x, y, brightness, rotation, sqrt):
-    vertices = []
+        draw.polygon(self._surface, (face.tiles[y][x] * brightness).color, vertices)
+        draw.polygon(self._surface, [60]*3, vertices, width=2)
 
-    for offset in OFFSETS:
-        position = (Vector3(x - face.size / 2 + 0.5, y - face.size / 2 + 0.5, -face.size / 2 + 0.5) + offset) / sqrt
-        position = rotate(position, *DIRECTION_DICT[face.direction])
-        position = rotate(position, *rotation)
-        position = project(position)
-        position = position + Vector2(WIDTH, HEIGHT) / 2
-        vertices.append(position)
-
-    draw.polygon(CUBE_SURFACE, (face.tiles[y][x] * brightness).color, vertices)
-    draw.polygon(CUBE_SURFACE, [60]*3, vertices, width=2)
-
-@checkSurface
-def drawCube(cube: Cube, rotation: Vector3):
-    for face in cube.faces.values():
-        drawFace(face, rotation)
+    # Draws the wholeself._cube
+    def drawCube(self):
+        for face in self._cube.faces.values():
+            self._drawFace(face)
         
 
+    def drawButtons(self, mouse: Vector2, hovered: bool):
+        front = self.getForwardFace()
+        closest = None
+        dist = inf
+        id = None
+
+        for i in range(4):
+            for x in range(self._cube.size):
+                vertices = []
+                origin = Vector3(x + self._half_width, -self._half_width, self._half_width)
+
+                for offset in TRIANGLE_OFFSETS:
+                    position = (origin + offset) / self._sqrt
+                    position = _rotate(position, *Vector3(0, 0, 90 * i))
+                    position = _rotate(position, *DIRECTION_DICT[front.direction])
+                    position = _rotate(position, *self.rotation)
+                    position = self.project(position)
+                    position = position + Vector2(self.width, self.height) / 2
+                    
+                    vertices.append(position)
+
+                if vertices[0].distance_squared_to(mouse) < dist:
+                    dist = vertices[0].distance_squared_to(mouse)
+                    closest = tuple(vertices)
+                    id = i + 4 * x
+                draw.polygon(self._surface, [200, 200, 201], vertices)
+                draw.polygon(self._surface, [130]*3, vertices, width=2)
+
+        vertices = []
+        for i in range(16):
+            half_width = -self._cube.size / 2 + 0.5
             
+            position = (Vector3(0.3, 0, half_width - 0.5)) / self._sqrt
+            position = _rotate(position, *Vector3(0, 0, 360/16 * i))
+            position = _rotate(position, *DIRECTION_DICT[front.direction])
+            position = _rotate(position, *self.rotation)
+            position = self.project(position)
+            position = position + Vector2(self.width, self.height) / 2
+            
+            vertices.append(position)
+            
+        if vertices[0].distance_squared_to(mouse) < dist:
+            dist = vertices[0].distance_squared_to(mouse)
+            closest = tuple(vertices)
+            id = -1
+            
+        draw.polygon(self._surface, [200, 200, 201], vertices)
+        draw.polygon(self._surface, [130]*3, vertices, width=2)
+
+        if hovered:
+            draw.polygon(self._surface, [200, 200, 201], closest)
+            draw.polygon(self._surface, [250]*3, closest, width=4)
         
+        return id, front.direction
 
 
+    def getForwardFace(self):
+        front_most_alignment = -1
+        front_most_face = None
+        for face in self._cube.faces.values():
+            normal = Vector3(0, 0, 1)
+            normal = _rotate(normal, *DIRECTION_DICT[face.direction]).normalize()
+            normal = _rotate(normal, *self.rotation).normalize()
+            alignment = normal.dot(Vector3(0, 0, 1))
 
+            if alignment > front_most_alignment:
+                front_most_alignment = alignment
+                front_most_face = face
 
-
-
-
-
-
+        return front_most_face
