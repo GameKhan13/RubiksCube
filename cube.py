@@ -37,20 +37,20 @@ class Cube:
         match face:
             case self.UP:
                 self._swap_lines(
-                    self.faces[self.FRONT].tiles([index]), 
-                    self.faces[self.RIGHT].tiles([index]), 
-                    self.faces[self.BACK].tiles([index]), 
-                    self.faces[self.LEFT].tiles([index]), 
+                    self.faces[self.FRONT].tiles[index], 
+                    self.faces[self.RIGHT].tiles[index], 
+                    self.faces[self.BACK].tiles[index], 
+                    self.faces[self.LEFT].tiles[index], 
                     direction)
 
             case self.DOWN:
                 self._swap_lines(
-                    self.faces[self.FRONT].tiles([self.size-1-index]), 
-                    self.faces[self.RIGHT].tiles([self.size-1-index]), 
-                    self.faces[self.BACK].tiles([self.size-1-index]), 
-                    self.faces[self.LEFT].tiles([self.size-1-index]), 
+                    self.faces[self.FRONT].tiles[self.size-1-index], 
+                    self.faces[self.RIGHT].tiles[self.size-1-index], 
+                    self.faces[self.BACK].tiles[self.size-1-index], 
+                    self.faces[self.LEFT].tiles[self.size-1-index], 
                     1-direction)#swap d
-                
+                    
             case self.LEFT:
                 pass
 
