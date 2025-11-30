@@ -1,16 +1,21 @@
 from pygame import Surface, Vector3, Vector2, draw
-from cube import Cube, Face
+from cube.cube import Cube
+from cube.cube_constants import FaceDirections as Cube_Consts
+from cube.face import Face
 from math import inf
+
 DIRECTION_DICT = {
-   Cube.UP : Vector3(-90, 0, 0),
-   Cube.DOWN : Vector3(90, 0, 0),
-   Cube.LEFT : Vector3(0, -270, 0),
-   Cube.RIGHT : Vector3(0, -90, 0),
-   Cube.BACK : Vector3(0, -180, 0),
-   Cube.FRONT : Vector3(0, 0, 0),
+   Cube_Consts.UP : Vector3(-90, 0, 0),
+   Cube_Consts.DOWN : Vector3(90, 0, 0),
+   Cube_Consts.LEFT : Vector3(0, -270, 0),
+   Cube_Consts.RIGHT : Vector3(0, -90, 0),
+   Cube_Consts.BACK : Vector3(0, -180, 0),
+   Cube_Consts.FRONT : Vector3(0, 0, 0),
 }
 SQUARE_OFFSETS = [Vector3(-0.5, 0.5, -0.5), Vector3(0.5, 0.5, -0.5), Vector3(0.5, -0.5, -0.5), Vector3(-0.5, -0.5, -0.5)]
 TRIANGLE_OFFSETS = [Vector3(-0.3, 0.7, -0.5), Vector3(0.3, 0.7, -0.5), Vector3(0.0, 1.0, -0.5)]
+
+
 
 # 3D Rotation of vectors around origin
 def _rotate(v: Vector3, pitch=0, yaw=0, roll=0, direction_order="ypr") -> Vector3:
@@ -39,6 +44,15 @@ class CubeRenderer:
         self._sqrt = (3 * (cube.size / 2) ** 2) ** 0.5
         self._half_width = -cube.size / 2 + 0.5
 
+        self._BUTTON_MAPPING = {
+            Cube_Consts.FRONT : [Cube_Consts.LEFT, Cube_Consts.UP, Cube_Consts.RIGHT, Cube_Consts.DOWN],
+            Cube_Consts.LEFT : [Cube_Consts.BACK, Cube_Consts.UP, Cube_Consts.FRONT, Cube_Consts.DOWN],
+            Cube_Consts.BACK : [Cube_Consts.RIGHT, Cube_Consts.UP, Cube_Consts.LEFT, Cube_Consts.DOWN],
+            Cube_Consts.RIGHT : [Cube_Consts.FRONT, Cube_Consts.UP, Cube_Consts.BACK, Cube_Consts.DOWN],
+            Cube_Consts.UP : [Cube_Consts.LEFT, Cube_Consts.BACK, Cube_Consts.RIGHT, Cube_Consts.FRONT],
+            Cube_Consts.DOWN : [Cube_Consts.LEFT, Cube_Consts.FRONT, Cube_Consts.RIGHT, Cube_Consts.BACK],
+        }
+
     def clear(self) -> None:
         self._surface.fill((0, 0, 0))
 
@@ -46,7 +60,7 @@ class CubeRenderer:
     def project(self, v: Vector3) -> Vector2:
         return Vector2(v.x * self.width / 2 * 0.95, v.y * self.height / 2 * 0.95)
 
-    # Draws a single face from aself._cube
+    # Draws a single face from a cube
     def _drawFace(self, face: Face) -> None:
         normal = Vector3(0, 0, 1)
         normal = _rotate(normal, *DIRECTION_DICT[face.direction]).normalize()
@@ -75,14 +89,14 @@ class CubeRenderer:
         draw.polygon(self._surface, (face.tiles[y][x] * brightness).color, vertices)
         draw.polygon(self._surface, [60]*3, vertices, width=2)
 
-    # Draws the wholeself._cube
+    # Draws the whole cube
     def drawCube(self):
         for face in self._cube.faces.values():
             self._drawFace(face)
         
-
-    def drawButtons(self, mouse: Vector2, hovered: bool):
-        front = self.getForwardFace()
+    # Draws the buttons and returns the button clicked
+    def drawButtons(self, mouse: Vector2, hovered: bool, click: int):
+        front = self._getForwardFace()
         closest = None
         dist = inf
         id = None
@@ -105,7 +119,7 @@ class CubeRenderer:
                 if vertices[0].distance_squared_to(mouse) < dist:
                     dist = vertices[0].distance_squared_to(mouse)
                     closest = tuple(vertices)
-                    id = i + 4 * x
+                    id = i + 4 * x + 1
                 draw.polygon(self._surface, [200, 200, 201], vertices)
                 draw.polygon(self._surface, [130]*3, vertices, width=2)
 
@@ -134,10 +148,14 @@ class CubeRenderer:
             draw.polygon(self._surface, [200, 200, 201], closest)
             draw.polygon(self._surface, [250]*3, closest, width=4)
         
-        return id, front.direction
+        if click == 1 and id > 0 and hovered:
+            self._performRotation(id - 1, front.direction)
+        
+        if click in [1, 3] and id == -1 and hovered:
+            self._cube.rotate(front.direction, click == 1)
 
-
-    def getForwardFace(self):
+    # Calculates forward most face and returns it
+    def _getForwardFace(self) -> Face:
         front_most_alignment = -1
         front_most_face = None
         for face in self._cube.faces.values():
@@ -151,3 +169,23 @@ class CubeRenderer:
                 front_most_face = face
 
         return front_most_face
+
+
+    def _performRotation(self, button_id, front_face):
+        if button_id // 4 <= 1:
+            face_to_rotate = self._BUTTON_MAPPING[front_face][button_id % 4]
+        else:
+            face_to_rotate = self._BUTTON_MAPPING[front_face][(button_id + 2) % 4]
+        
+        if button_id // 4 <= self._cube.size // 2:
+            direction = 1
+            index = (button_id // 4)
+        else:
+            direction = 0
+            index = (self._cube.size) - (button_id // 4) - 1
+
+        self._cube.rotate(face_to_rotate, direction, index)
+
+            
+
+
