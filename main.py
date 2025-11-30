@@ -14,11 +14,6 @@ b = 22.5
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.display.toggle_fullscreen()
-            screen.fill([255]*3)
-            pygame.display.flip()
-            for i in range(60 * 3):
-                clock.tick(60)
             pygame.quit()
             quit()
         if event.type == pygame.MOUSEBUTTONDOWN:
