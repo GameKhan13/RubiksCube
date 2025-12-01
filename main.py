@@ -34,9 +34,10 @@ while True:
     color = graphics._surface.get_at([int(a) for a in mouse_pos])
 
     graphics.clear()
-    graphics.drawCube()
     graphics.rotation = pygame.Vector3(b, a, 0)
-    graphics.drawButtons(mouse_pos, color == (200, 200, 201, 255), mouse_button)
+    on_button = (color == (200, 200, 201, 255))
+    graphics.drawCube()
+    graphics.drawButtons(mouse_pos, on_button, mouse_button)
     
     mouse_button = 0
     screen.blit(graphics._surface, top_left)

@@ -121,7 +121,6 @@ class CubeRenderer:
                     closest = tuple(vertices)
                     id = i + 4 * x + 1
                 draw.polygon(self._surface, [200, 200, 201], vertices)
-                draw.polygon(self._surface, [130]*3, vertices, width=2)
 
         vertices = []
         for i in range(16):
@@ -142,11 +141,9 @@ class CubeRenderer:
             id = -1
             
         draw.polygon(self._surface, [200, 200, 201], vertices)
-        draw.polygon(self._surface, [130]*3, vertices, width=2)
 
         if hovered:
             draw.polygon(self._surface, [200, 200, 201], closest)
-            draw.polygon(self._surface, [250]*3, closest, width=4)
         
         if click == 1 and id > 0 and hovered:
             self._performRotation(id - 1, front.direction)
@@ -172,12 +169,12 @@ class CubeRenderer:
 
 
     def _performRotation(self, button_id, front_face):
-        if button_id // 4 <= 1:
+        if button_id // 4 < self._cube.size // 2:
             face_to_rotate = self._BUTTON_MAPPING[front_face][button_id % 4]
         else:
             face_to_rotate = self._BUTTON_MAPPING[front_face][(button_id + 2) % 4]
         
-        if button_id // 4 <= self._cube.size // 2:
+        if button_id // 4 < self._cube.size // 2:
             direction = 1
             index = (button_id // 4)
         else:
